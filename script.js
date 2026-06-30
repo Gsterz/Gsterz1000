@@ -54,6 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
     await loadSettings();
 
     members = await loadMembers();
+alert(members.length);
 
     config.state1 = settings.state1;
     config.state2 = settings.state2;
