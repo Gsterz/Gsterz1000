@@ -1,499 +1,386 @@
-// ======================================
-// SVS Dashboard V0.2
-// ======================================
+<!DOCTYPE html>
+<html lang="ko">
 
-document.addEventListener("DOMContentLoaded", () => {
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    // ======================================
-    // Config
-    // ======================================
+    <title>Gsterz Dashboard V0.2</title>
 
-    const config = {
+    <script src="https://cdn.tailwindcss.com"></script>
 
-        state1: "",
-        state2: ""
-
-    }
-
-    document.getElementById("state1Header").textContent = config.state1
-    document.getElementById("state2Header").textContent = config.state2
-
-    document.getElementById("state1Title").textContent =
-        "◎ " + config.state1
-
-    document.getElementById("state2Title").textContent =
-        "◎ " + config.state2
-
-
-    // ======================================
-    // Sheet js Data
-    // ======================================
-
-//    let members = [];
-
-    //======================================
-    // UTC Clock
-    // ======================================
-
-    let utcTimer = null;
-    let refreshTimer = null;
-
-    function updateUTC(){
-
-        const now = new Date()
-
-        document.getElementById("utcClock").textContent =
-            now.getUTCHours().toString().padStart(2,"0") + ":" +
-            now.getUTCMinutes().toString().padStart(2,"0") + ":" +
-            now.getUTCSeconds().toString().padStart(2,"0")
-
-    }
-
-  async function refreshDashboard(){
-
-    await loadSettings();
-
-    await loadMembers();
-
-    config.state1 = settings.state1;
-    config.state2 = settings.state2;
-
-    document.getElementById("state1Header").textContent = config.state1;
-document.getElementById("state2Header").textContent = config.state2;
-
-document.getElementById("state1Title").textContent =
-    "◎ " + config.state1;
-
-document.getElementById("state2Title").textContent =
-    "◎ " + config.state2;
-
-    PET_DURATION = Number(settings.petDuration);
-
-    updateUTC();
-
-    renderMembers();
-
-    renderServerSummary();
-
-    renderAllianceSummary();
-
-}
-
-async function startClock(){
-
-    if(utcTimer) return;
-
-    await refreshDashboard();
-
-    utcTimer = setInterval(updateUTC,1000);
-
-    refreshTimer = setInterval(refreshDashboard,5000);
-
-}
-
-function stopClock(){
-
-    clearInterval(utcTimer);
-    clearInterval(refreshTimer);
-
-    utcTimer = null;
-    refreshTimer = null;
-
-}
-
-    document.getElementById("startButton")
-        .addEventListener("click",startClock)
-
-    document.getElementById("stopButton")
-        .addEventListener("click",stopClock)
-
-
-    // ======================================
-    // Utils
-    // ======================================
-
-let PET_DURATION = 7200; // 나중엔 Setting 시트에서 읽기
-
-function formatRemain(member){
-
-    if(member.pet !== "ON")
-        return "-";
-
-    if(!member.petStartTime)
-        return "-";
-
-    const now = new Date();
-
-    const start = new Date(member.petStartTime);
-
-    const remainSec =
-        PET_DURATION -
-        Math.floor((now - start) / 1000);
-
-    if(remainSec <= 0)
-        return "0분";
-
-    const h = Math.floor(remainSec / 3600);
-    const m = Math.floor((remainSec % 3600) / 60);
-
-    if(h > 0)
-        return `${h}시간 ${m}분`;
-
-    return `${m}분`;
-}
-
-
-function getDisplayPet(member){
-
-    if(member.pet !== "ON")
-        return member.pet;
-
-    if(!member.petStartTime)
-        return "OFF";
-
-    const start = new Date(member.petStartTime);
-    const now = new Date();
-
-    const remain =
-        PET_DURATION -
-        Math.floor((now - start) / 1000);
-
-    if(remain <= 0)
-        return "OFF";
-
-    return "ON";
-}
-
-function petClass(status){
-
-    if(status=="ON") return "petOn"
-
-    if(status=="OFF") return "petOff"
-
-    return "petReady"
-
-}
-  
-
-    function attendIcon(value){
-
-        return value
-            ? '<span class="attend">✔</span>'
-            : '<span class="absent">✖</span>'
-
-    }
-
-  function planetBadge(value){
-
-    if(value === "P") return "🪐";
-    if(value === "A") return "🌍";
-    if(value === "B") return "🌕";
-
-    return value;
-}
-
-    // ======================================
-    // Member Table
-    // ======================================
-
-function renderMembers() {
-
-    const tbody1 = document.getElementById("memberTable1Body");
-    const tbody2 = document.getElementById("memberTable2Body");
-
-    tbody1.innerHTML = "";
-    tbody2.innerHTML = "";
-
-    // 서버별 + 펫투력 높은순 정렬
-    const state1Members = members
-        .filter(m => m.state === config.state1)
-        .sort((a, b) => b.petPower - a.petPower);
-
-    const state2Members = members
-        .filter(m => m.state === config.state2)
-        .sort((a, b) => b.petPower - a.petPower);
-
-    // 서버1 출력
-    state1Members.forEach(member => {
-
-        tbody1.innerHTML += `
-        <tr>
-
-            <td>${member.alliance}</td>
-
-            <td>${member.id}</td>
-
-<td class="${petClass(getDisplayPet(member))}">
-    ${getDisplayPet(member)}
-</td>
-
-            <td>${formatRemain(member)}</td>
-
-<td>${planetBadge(member.planet)}</td>
-
-            <td>${member.core}</td>
-
-            <td>${member.petPower}</td>
-
-            <td>${attendIcon(member.attend)}</td>
-
-        </tr>
-        `;
-
-    });
-
-    // 서버2 출력
-    state2Members.forEach(member => {
-
-        tbody2.innerHTML += `
-        <tr>
-
-            <td>${member.alliance}</td>
-
-            <td>${member.id}</td>
-
-<td class="${petClass(getDisplayPet(member))}">
-    ${getDisplayPet(member)}
-</td>
-
-          <td>${formatRemain(member)}</td>
-            <td>${planetBadge(member.planet)}</td>
-
-            <td>${member.core}</td>
-
-            <td>${member.petPower}</td>
-
-          <td>${attendIcon(member.attend)}</td>
-
-        </tr>
-        `;
-
-    });
-
-    // 제목
-    document.getElementById("memberState1Title").textContent =
-        `◎ ${config.state1} (${state1Members.length}명)`;
-
-    document.getElementById("memberState2Title").textContent =
-        `◎ ${config.state2} (${state2Members.length}명)`;
-
-    document.getElementById("memberCount").textContent =
-        members.length;
-}
-
-    // ======================================
-    // Server Summary
-    // ======================================
-
-function renderServerSummary() {
-
-    const tbody = document.getElementById("serverSummaryBody");
-
-    // 서버별 통계
-    const summary = {};
-
-    [config.state1, config.state2].forEach(state => {
-
-        summary[state] = {
-            rally: 0,
-            on: 0,
-            off: 0,
-            ready: 0
-        };
-
-    });
-
-    // members 데이터 계산
-    members.forEach(member => {
-
-        const s = summary[member.state];
-
-        if (!s) return;
-
-        // 참여자 = 집결장
-        if (member.attend)
-            s.rally++;
-
-        // 펫 상태
-switch(getDisplayPet(member)){
-
-    case "ON":
-        s.on++;
-        break;
-
-    case "OFF":
-        s.off++;
-        break;
-
-    case "READY":
-        s.ready++;
-        break;
-}
-
-    });
-
-    // 화면 출력
-    tbody.innerHTML = `
-        <tr>
-            <td>집결장</td>
-            <td class="number">${summary[config.state1].rally}</td>
-            <td class="number">${summary[config.state2].rally}</td>
-        </tr>
-
-        <tr>
-            <td>펫ON</td>
-            <td class="number petOn">${summary[config.state1].on}</td>
-            <td class="number petOn">${summary[config.state2].on}</td>
-        </tr>
-
-        <tr>
-            <td>펫OFF</td>
-            <td class="number petOff">${summary[config.state1].off}</td>
-            <td class="number petOff">${summary[config.state2].off}</td>
-        </tr>
-
-        <tr>
-            <td>잔여</td>
-            <td class="number petReady">${summary[config.state1].ready}</td>
-            <td class="number petReady">${summary[config.state2].ready}</td>
-        </tr>
-    `;
-
-}
-
-
-    // ======================================
-    // Alliance Summary
-    // ======================================
-
-// ======================================
-// Alliance Summary
-// ======================================
-
-function renderAllianceSummary() {
-
-    const tbody1 = document.getElementById("alliance1Body");
-    const tbody2 = document.getElementById("alliance2Body");
-
-    tbody1.innerHTML = "";
-    tbody2.innerHTML = "";
-
-    // -----------------------
-    // 서버별 연맹 통계 생성
-    // -----------------------
-
-    const summary = {};
-
-    members.forEach(member => {
-
-        if (!summary[member.state])
-            summary[member.state] = {};
-
-        if (!summary[member.state][member.alliance]) {
-
-            summary[member.state][member.alliance] = {
-
-                rally:0,
-                on:0,
-                off:0,
-                ready:0
-
-            };
-
+    <style>
+        body{
+            background:#edf2f7;
         }
 
-        const a = summary[member.state][member.alliance];
+        .card{
+            background:white;
+            border-radius:14px;
+            box-shadow:0 2px 10px rgba(0,0,0,.08);
+        }
 
-        if(member.attend)
-            a.rally++;
+        table{
+            width:100%;
+            border-collapse:collapse;
+        }
 
-        switch(getDisplayPet(member)){
+        th,td{
+            border:1px solid #d1d5db;
+            padding:8px;
+            text-align:center;
+        }
 
-    case "ON":
-        a.on++;
-        break;
+        th{
+            background:#f3f4f6;
+            font-weight:700;
+        }
 
-    case "OFF":
-        a.off++;
-        break;
+        .title{
+            font-size:22px;
+            font-weight:bold;
+            margin-bottom:15px;
+        }
 
-    case "READY":
-        a.ready++;
-        break;
-}
+        .number{
+            font-size:22px;
+            font-weight:bold;
+        }
 
-    });
+        .petOn{
+            color:#16a34a;
+            
+        }
 
-    // -----------------------
-    // 1690 출력
-    // -----------------------
+        .petOff{
+            color:#dc2626;
+            
+        }
 
-    if(summary[config.state1]){
+        .petReady{
+            color:#ca8a04;
+            
+        }
 
-        Object.entries(summary[config.state1]).forEach(([alliance,data])=>{
+        .attend{
+            color:#16a34a;
+            font-weight:bold;
+            font-size:18px;
+        }
 
-            tbody1.innerHTML += `
+        .absent{
+            color:#dc2626;
+            font-weight:bold;
+            font-size:18px;
+        }
 
-            <tr>
+    </style>
 
-                <td>${alliance}</td>
+</head>
 
-                <td class="number">${data.rally}</td>
+<body class="p-5">
 
-                <td class="number petOn">${data.on}</td>
+<div class="max-w-[1850px] mx-auto">
 
-                <td class="number petOff">${data.off}</td>
+<!-- ================= HEADER ================= -->
 
-                <td class="number petReady">${data.ready}</td>
+<div class="card p-5 mb-5">
 
-            </tr>
+<div class="flex justify-between items-center">
 
-            `;
+<div>
 
-        });
+<div class="text-3xl font-bold">
 
-    }
+Gangster Board
 
-    // -----------------------
-    // 상대맹 출력
-    // -----------------------
+</div>
 
-    if(summary[config.state2]){
+</div>
 
-        Object.entries(summary[config.state2]).forEach(([alliance,data])=>{
+<div class="flex items-center gap-8">
 
-            tbody2.innerHTML += `
+<div class="text-center">
 
-            <tr>
+<div class="text-sm text-gray-500">
 
-                <td>${alliance}</td>
+UTC
 
-                <td class="number">${data.rally}</td>
+</div>
 
-                <td class="number petOn">${data.on}</td>
+<div id="utcClock"
 
-                <td class="number petOff">${data.off}</td>
+class="text-4xl font-bold tracking-widest">
 
-                <td class="number petReady">${data.ready}</td>
+00:00:00
 
-            </tr>
+</div>
 
-            `;
+</div>
 
-        });
+<button id="startButton"
 
-    }
+class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold">
 
-}
+START
 
-    // ======================================
-    // Init
-    // ======================================
+</button>
 
-(async()=>{
+<button id="stopButton"
 
-    await startClock();
+class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold">
 
-})();
+STOP
 
-})
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ================= MAIN ================= -->
+
+<div class="grid grid-cols-12 gap-5">
+
+<!-- LEFT -->
+
+<div class="col-span-4 space-y-5">
+
+<!-- SERVER SUMMARY -->
+
+<div class="card p-5">
+
+<div class="title">
+
+◎ 서버현황
+
+</div>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>서버</th>
+
+<th id="state1Header"></th>
+
+<th id="state2Header"></th>
+
+</tr>
+
+</thead>
+
+<tbody id="serverSummaryBody">
+
+<!-- JS 생성 -->
+
+</tbody>
+
+</table>
+
+</div>
+
+<!-- 1690 -->
+
+<div class="card p-5">
+
+<div id="state1Title"
+
+class="title">
+
+</div>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>연맹</th>
+
+<th>집결장</th>
+
+<th>펫ON</th>
+
+<th>펫OFF</th>
+
+<th>잔여</th>
+
+</tr>
+
+</thead>
+
+<tbody id="alliance1Body">
+
+</tbody>
+
+</table>
+
+</div>
+
+<!-- 상대맹 -->
+
+<div class="card p-5">
+
+<div id="state2Title"
+
+class="title">
+
+</div>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>연맹</th>
+
+<th>집결장</th>
+
+<th>펫ON</th>
+
+<th>펫OFF</th>
+
+<th>잔여</th>
+
+</tr>
+
+</thead>
+
+<tbody id="alliance2Body">
+
+</tbody>
+
+</table>
+
+</div>
+
+</div>
+
+<!-- ================= RIGHT ================= -->
+
+<div class="col-span-8">
+
+    <div class="card p-5">
+
+        <div class="flex justify-between items-center mb-4">
+
+            <div class="title mb-0">
+                ◎ 인원 현황
+            </div>
+
+            <div class="text-sm text-gray-500">
+                Total :
+                <span id="memberCount" class="font-bold text-black">
+                    0
+                </span>
+            </div>
+
+        </div>
+
+        <div class="overflow-y-auto max-h-[900px]">
+
+            <!-- ================= STATE 1 ================= -->
+
+            <div id="memberState1Title"
+                class="text-xl font-bold mb-3">
+            </div>
+
+            <table class="mb-8">
+
+                <thead>
+
+                    <tr>
+
+                        <th style="width:80px;">연맹</th>
+
+                        <th>아이디</th>
+
+                        <th style="width:90px;">펫상태</th>
+
+                        <th style="width:110px;">잔여시간</th>
+
+                        <th style="width:70px;">행성</th>
+
+                        <th style="width:70px;">지심</th>
+
+                        <th style="width:90px;">펫투</th>
+
+                        <th style="width:70px;">참여</th>
+
+                        <th>참고사항</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="memberTable1Body">
+
+                </tbody>
+
+            </table>
+
+            <!-- ================= STATE 2 ================= -->
+
+            <div id="memberState2Title"
+                class="text-xl font-bold mb-3 mt-6">
+            </div>
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th style="width:80px;">연맹</th>
+
+                        <th>아이디</th>
+
+                        <th style="width:90px;">펫상태</th>
+
+                        <th style="width:110px;">잔여시간</th>
+
+                        <th style="width:70px;">행성</th>
+
+                        <th style="width:70px;">지심</th>
+
+                        <th style="width:90px;">펫투</th>
+
+                        <th style="width:70px;">참여</th>
+
+                        <th>참고사항</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="memberTable2Body">
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+<script src="sheet.js">
+    
+</script>
+  
+<script src="script.js">
+    
+</script>
+
+</body>
+
+</html>
