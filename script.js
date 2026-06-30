@@ -203,7 +203,7 @@ function renderMembers() {
 
     const state2Members = members
         .filter(m => m.state === config.state2)
-        .sort((a, b) => b.petPower - a.petPower);
+        .sort((a, b) => Number(b.petPower) - Number(a.petPower))
 
     // 서버1 출력
     state1Members.forEach(member => {
