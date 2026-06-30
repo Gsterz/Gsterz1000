@@ -1,8 +1,8 @@
 {
   "name": "Gangsterz",
   "short_name": "Timer1000_1",
-  "start_url": "/Gsterz1000-1/",
-  "scope": "/Gsterz1000-1/",
+  "start_url": "/Gsterz1000/",
+  "scope": "/Gsterz1000/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#3b82f6",
