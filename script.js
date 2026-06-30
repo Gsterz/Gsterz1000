@@ -199,7 +199,7 @@ function renderMembers() {
     // 서버별 + 펫투력 높은순 정렬
     const state1Members = members
         .filter(m => m.state === config.state1)
-        .sort((a, b) => b.petPower - a.petPower);
+        .sort((a, b) => Number(b.petPower) - Number(a.petPower))
 
     const state2Members = members
         .filter(m => m.state === config.state2)
