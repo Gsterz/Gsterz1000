@@ -183,6 +183,14 @@ function petClass(status){
 
     }
 
+  function planetBadge(value){
+
+    if(value === "P") return "🪐";
+    if(value === "A") return "🌍";
+    if(value === "B") return "🌕";
+
+    return value;
+}
 
     // ======================================
     // Member Table
@@ -221,15 +229,13 @@ function renderMembers() {
 
             <td>${formatRemain(member)}</td>
 
-            <td>${member.planet}</td>
+<td>${planetBadge(member.planet)}</td>
 
             <td>${member.core}</td>
 
             <td>${member.petPower}</td>
 
             <td>${attendIcon(member.attend)}</td>
-
-            <td>${member.note}</td>
 
         </tr>
         `;
@@ -251,16 +257,13 @@ function renderMembers() {
 </td>
 
           <td>${formatRemain(member)}</td>
-
-            <td>${member.planet}</td>
+            <td>${planetBadge(member.planet)}</td>
 
             <td>${member.core}</td>
 
             <td>${member.petPower}</td>
 
-            <td>${attendIcon(member.attend)}</td>
-
-            <td>${member.note}</td>
+          <td>${attendIcon(member.attend)}</td>
 
         </tr>
         `;
