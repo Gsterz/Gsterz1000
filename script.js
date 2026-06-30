@@ -55,10 +55,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     members = await loadMembers();
 
-console.log("members", members);
-console.log("count", members.length);
-console.log("settings", settings);
-
     config.state1 = settings.state1;
     config.state2 = settings.state2;
 
