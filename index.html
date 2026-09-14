@@ -1,367 +1,454 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
 
-    <title>Gsterz Dashboard V0.2</title>
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
 
-    <script src="https://cdn.tailwindcss.com"></script>
+  <title>Group Manager</title>
 
-    <style>
-        body{
-            background:#edf2f7;
-        }
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-        .card{
-            background:white;
-            border-radius:14px;
-            box-shadow:0 2px 10px rgba(0,0,0,.08);
-        }
+  <style>
 
-        table{
-            width:100%;
-            border-collapse:collapse;
-        }
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
 
-        th, td{
-    border:1px solid #d1d5db;
-    padding:5px 8px;
-    text-align:center;
-    font-size:14px;
-}
-        
+    body {
+      overscroll-behavior: none;
+    }
 
-        th{
-            background:#f3f4f6;
-            font-weight:700;
-        }
+    /* --------------------------------
+       User Chip
+    -------------------------------- */
 
-        .title{
-            font-size:18px;
-            font-weight:bold;
-            margin-bottom:15px;
-        }
+    .user-chip {
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      cursor: grab;
 
-        .number{
-            font-size:14px;
-            
-        }
+      transition:
+        transform 0.12s,
+        opacity 0.12s;
+    }
 
-        .petOn{
-            color:#16a34a;
-            font-weight:bold;
-        }
+    .user-chip:active {
+      cursor: grabbing;
+    }
 
-        .petOff{
-            color:#dc2626;
-            font-weight:bold;
-        }
+    .user-chip.dragging {
+      opacity: 0.35;
+      transform: scale(0.95);
+    }
 
-        .petReady{
-            color:#ca8a04;
-            font-weight:bold;
-        }
 
-        .attend{
-            color:#16a34a;
-            font-weight:bold;
-            font-size:16px;
-        }
+    /* --------------------------------
+       Group Drop Zone
+    -------------------------------- */
 
-        .absent{
-            color:#dc2626;
-            font-weight:bold;
-            font-size:16px;
-        }
+    .group-drop-zone {
+      transition:
+        background-color 0.15s,
+        border-color 0.15s;
+    }
 
-    </style>
+    .group-drop-zone.drag-over {
+      background-color: #eff6ff;
+      border-color: #60a5fa;
+    }
+
+
+    /* --------------------------------
+       Available Drop Zone
+    -------------------------------- */
+
+    .available-drop-zone {
+      transition:
+        background-color 0.15s,
+        border-color 0.15s;
+    }
+
+    .available-drop-zone.drag-over {
+      background-color: #f0fdf4;
+      border-color: #4ade80;
+    }
+
+
+    /* --------------------------------
+       Delete Drop Zone
+    -------------------------------- */
+
+    .delete-drop-zone {
+      transition:
+        background-color 0.15s,
+        border-color 0.15s;
+    }
+
+    .delete-drop-zone.drag-over {
+      background-color: #fef2f2;
+      border-color: #f87171;
+    }
+
+
+    /* --------------------------------
+       Touch Drag Preview
+    -------------------------------- */
+
+    .drag-preview {
+      position: fixed;
+
+      z-index: 9999;
+
+      pointer-events: none;
+
+      opacity: 0.9;
+
+      transform:
+        translate(-50%, -50%)
+        scale(1.03);
+    }
+
+
+    /* --------------------------------
+       Drop Indicator
+    -------------------------------- */
+
+    .drop-indicator {
+      width: 3px;
+
+      min-width: 3px;
+
+      height: 38px;
+
+      background: #3b82f6;
+
+      border-radius: 999px;
+
+      pointer-events: none;
+    }
+
+
+    /* --------------------------------
+       Input
+    -------------------------------- */
+
+    .group-name-input {
+      width: 70px;
+
+      text-align: center;
+
+      border: 1px solid #d1d5db;
+
+      border-radius: 6px;
+
+      padding: 2px 6px;
+
+      font-size: 13px;
+
+      font-weight: 600;
+
+      background: white;
+
+      outline: none;
+    }
+
+    .group-name-input:focus {
+      border-color: #60a5fa;
+      box-shadow:
+        0 0 0 1px #60a5fa;
+    }
+
+
+    /* --------------------------------
+       New User Input
+    -------------------------------- */
+
+    .new-user-input {
+      width: 120px;
+
+      border: 1px solid #d1d5db;
+
+      border-radius: 8px;
+
+      padding: 8px 10px;
+
+      font-size: 14px;
+
+      outline: none;
+    }
+
+    .new-user-input:focus {
+      border-color: #60a5fa;
+
+      box-shadow:
+        0 0 0 1px #60a5fa;
+    }
+
+  </style>
 
 </head>
 
-<body class="p-5">
 
-<div class="max-w-[1850px] mx-auto">
-
-<!-- ================= HEADER ================= -->
-
-<div class="card p-5 mb-5">
-
-<div class="flex justify-between items-center">
-
-<div>
-
-<div class="text-3xl font-bold">
-
-Gangster Board
-
-</div>
-
-</div>
-
-<div class="flex items-center gap-8">
-
-<div class="text-center">
-
-<div class="text-sm text-gray-500">
-
-UTC
-
-</div>
-
-<div id="utcClock"
-
-class="text-4xl font-bold tracking-widest">
-
-00:00:00
-
-</div>
-
-</div>
-
-<button id="startButton"
-
-class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold">
-
-START
-
-</button>
-
-<button id="stopButton"
-
-class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold">
-
-STOP
-
-</button>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- ================= MAIN ================= -->
-
-<div class="grid grid-cols-12 gap-5">
-
-<!-- LEFT -->
-
-<div class="col-span-4 space-y-5">
-
-<!-- SERVER SUMMARY -->
-
-<div class="card p-5">
-
-<div class="title">
-
-◎ 서버현황
-
-</div>
-
-<table>
-
-<thead>
-
-<tr>
-    <th style="width:100px;">서버</th>
-    <th style="width:100px;" id="state1Header"></th>
-    <th style="width:100px;" id="state2Header"></th>
-</tr>
-
-</thead>
-
-<tbody id="serverSummaryBody">
-
-<!-- JS 생성 -->
-
-</tbody>
-
-</table>
-
-</div>
-
-<!-- 1690 -->
-
-<div class="card p-5">
-
-<div id="state1Title"
-
-class="title">
-
-</div>
-
-<table>
-
-<thead>
-
-<tr>
-    <th style="width:60px;">연맹</th>
-    <th style="width:60px;">집결장</th>
-    <th style="width:60px;">펫ON</th>
-    <th style="width:60px;">펫OFF</th>
-    <th style="width:60px;">잔여</th>
-</tr>
-
-</thead>
-
-<tbody id="alliance1Body">
-
-</tbody>
-
-</table>
-
-</div>
-
-<!-- 상대맹 -->
-
-<div class="card p-5">
-
-<div id="state2Title"
-
-class="title">
-
-</div>
-
-<table>
-
-<thead>
-
-<tr>
-    <th style="width:60px;">연맹</th>
-    <th style="width:60px;">집결장</th>
-    <th style="width:60px;">펫ON</th>
-    <th style="width:60px;">펫OFF</th>
-    <th style="width:60px;">잔여</th>
-</tr>
-
-</thead>
-
-<tbody id="alliance2Body">
-
-</tbody>
-
-</table>
-
-</div>
-
-</div>
-
-<!-- ================= RIGHT ================= -->
-
-<div class="col-span-8">
-
-    <div class="card p-5">
-
-        <div class="flex justify-between items-center mb-4">
-
-            <div class="title mb-0">
-                ◎ 인원 현황
-            </div>
-
-            <div class="text-sm text-gray-500">
-                Total :
-                <span id="memberCount" class="font-bold text-black">
-                    0
-                </span>
-            </div>
-
-        </div>
-
-        <div class="overflow-y-auto max-h-[900px]">
-
-            <!-- ================= STATE 1 ================= -->
-
-            <div id="memberState1Title"
-                class="text-lg font-bold mb-3">
-            </div>
-
-            <table class="mb-8">
-
-                <thead>
-
-                    <tr>
-
-                        <th style="width:60px;">연맹</th>
-
-                        <th style="width:80px;">아이디</th>
-
-                        <th style="width:80px;">펫상태</th>
-
-                        <th style="width:100px;">잔여시간</th>
-
-                        <th style="width:60px;">행성</th>
-
-                        <th style="width:70px;">지심</th>
-
-                        <th style="width:70px;">펫투</th>
-
-                        <th style="width:60px;">참여</th>
-
-                    </tr>
-
-                </thead>
-
-                <tbody id="memberTable1Body">
-
-                </tbody>
-
-            </table>
-
-            <!-- ================= STATE 2 ================= -->
-
-            <div id="memberState2Title"
-                class="text-lg font-bold mb-3 mt-6">
-            </div>
-
-            <table>
-
-                <thead>
-
-                    <tr>
-
-                        <th style="width:60px;">연맹</th>
-
-                        <th style="width:80px;">아이디</th>
-
-                        <th style="width:80px;">펫상태</th>
-
-                        <th style="width:100px;">잔여시간</th>
-
-                        <th style="width:60px;">행성</th>
-
-                        <th style="width:70px;">지심</th>
-
-                        <th style="width:70px;">펫투</th>
-
-                        <th style="width:60px;">참여</th>
-
-                    </tr>
-
-                </thead>
-
-                <tbody id="memberTable2Body">
-
-                </tbody>
-
-            </table>
-
-        </div>
+<body
+  class="
+    bg-gray-100
+    text-gray-800
+    min-h-screen
+  "
+>
+
+
+  <!-- =====================================================
+       TOP BAR
+  ====================================================== -->
+
+  <header
+    class="
+      bg-white
+      border-b
+      shadow-sm
+    "
+  >
+
+    <div
+      class="
+        max-w-5xl
+        mx-auto
+        px-4
+        py-3
+      "
+    >
+
+      <div
+        class="
+          flex
+          justify-end
+          items-center
+          gap-2
+        "
+      >
+
+        <!-- Add Group -->
+
+        <button
+          id="addGroupBtn"
+          class="
+            px-3
+            py-2
+            rounded-lg
+            bg-blue-500
+            text-white
+            text-sm
+            font-semibold
+            active:scale-95
+          "
+        >
+          + Group
+        </button>
+
+
+        <!-- Copy -->
+
+        <button
+          id="copyBtn"
+          class="
+            px-3
+            py-2
+            rounded-lg
+            bg-gray-200
+            text-gray-700
+            text-sm
+            font-semibold
+            active:scale-95
+          "
+        >
+          Copy
+        </button>
+
+
+        <!-- Reset -->
+
+        <button
+          id="resetBtn"
+          class="
+            px-3
+            py-2
+            rounded-lg
+            bg-gray-200
+            text-gray-700
+            text-sm
+            font-semibold
+            active:scale-95
+          "
+        >
+          Reset
+        </button>
+
+      </div>
 
     </div>
 
-</div>
+  </header>
 
-</div>
 
-<script src="sheet.js">
-    
-</script>
-  
-<script src="script.js">
-    
-</script>
+
+  <!-- =====================================================
+       MAIN
+  ====================================================== -->
+
+  <main
+    class="
+      max-w-5xl
+      mx-auto
+      px-3
+      py-4
+    "
+  >
+
+
+    <!-- ===================================================
+         GROUPS
+    ==================================================== -->
+
+    <div
+      id="groupsContainer"
+      class="space-y-4"
+    ></div>
+
+
+
+    <!-- ===================================================
+         AVAILABLE USERS
+    ==================================================== -->
+
+    <section
+      class="
+        mt-6
+        bg-white
+        rounded-xl
+        border
+        shadow-sm
+        overflow-hidden
+      "
+    >
+
+      <!-- Available Header -->
+
+      <div
+        class="
+          flex
+          items-center
+          justify-between
+          gap-3
+          px-4
+          py-3
+          bg-gray-50
+          border-b
+        "
+      >
+
+        <div>
+
+          <div
+            class="
+              font-bold
+              text-base
+            "
+          >
+            Available Users
+          </div>
+
+          <div
+            class="
+              text-xs
+              text-gray-500
+              mt-1
+            "
+          >
+            Drag users into a group
+          </div>
+
+        </div>
+
+
+        <div
+          class="
+            flex
+            items-center
+            gap-3
+          "
+        >
+
+          <span
+            id="availableCount"
+            class="
+              text-xs
+              text-gray-500
+              font-semibold
+            "
+          ></span>
+
+
+          <!-- Delete Zone -->
+
+          <div
+            id="availableDeleteZone"
+            class="
+              delete-drop-zone
+              px-3
+              py-2
+              rounded-lg
+              border
+              border-red-200
+              text-red-500
+              text-xs
+              font-semibold
+              whitespace-nowrap
+            "
+          >
+            Delete
+          </div>
+
+        </div>
+
+      </div>
+
+
+
+      <!-- Available Drop Zone -->
+
+      <div
+        id="availableUsers"
+        class="
+          available-drop-zone
+          p-4
+          min-h-[110px]
+          flex
+          flex-wrap
+          items-start
+          content-start
+          gap-2
+          border-2
+          border-transparent
+        "
+      ></div>
+
+    </section>
+
+
+  </main>
+
+
+  <!-- JavaScript -->
+
+  <script src="script.js"></script>
 
 </body>
 
