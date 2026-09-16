@@ -16,6 +16,29 @@
 
   <style>
 
+@font-face {
+  font-family: "MomoTrustDisplay";
+  src: url("./fonts/MomoTrustDisplay-Regular1.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+.user-name {
+  font-family: "MomoTrustDisplay", sans-serif;
+}
+
+    .user-timer {
+  display: none;
+  margin-left: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #9ca3af;
+}
+
+.user-chip.selected .user-timer {
+  display: inline;
+  color: #d97706;
+}
 
 .user-chip.selected {
   background-color: #fef3c7;
