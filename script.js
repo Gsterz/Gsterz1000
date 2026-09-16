@@ -67,6 +67,8 @@ let availableUsers = [];
 let dragState = null;
 let touchState = null;
 
+/* Selected users + selection time */
+let selectedUsers = {};
 
 
 /* ==========================================================
@@ -114,6 +116,9 @@ function init() {
         data.availableUsers || [];
 
 
+      selectedUsers =
+        data.selectedUsers || {};
+
     } catch {
 
       loadDefaultState();
@@ -158,6 +163,8 @@ function loadDefaultState() {
   availableUsers =
     [...DEFAULT_USERS];
 
+  selectedUsers = {};
+
 }
 
 
@@ -176,7 +183,9 @@ function save() {
 
       groups,
 
-      availableUsers
+      availableUsers,
+
+      selectedUsers
 
     })
 
@@ -694,10 +703,6 @@ function createUserChip(
     `;
 
 
-  chip.textContent =
-    user;
-
-
   chip.dataset.user =
     user;
 
@@ -705,37 +710,142 @@ function createUserChip(
   chip.dataset.sourceGroup =
     sourceGroup;
 
-  /* Click = select / deselect */
 
-chip.addEventListener(
-  "click",
-  e => {
+  /* -----------------------------------------------
+     User Name
+  ------------------------------------------------ */
 
-    /*
-     * Ignore click after dragging
-     */
-    if (
-      chip.dataset.wasDragged ===
-      "true"
-    ) {
-
-      chip.dataset.wasDragged =
-        "false";
-
-      return;
-
-    }
+  const name =
+    document.createElement(
+      "span"
+    );
 
 
-    chip.classList.toggle(
+  name.className =
+    "user-name";
+
+
+  name.textContent =
+    user;
+
+
+  chip.appendChild(
+    name
+  );
+
+
+  /* -----------------------------------------------
+     Timer
+  ------------------------------------------------ */
+
+  const timer =
+    document.createElement(
+      "span"
+    );
+
+
+  timer.className =
+    "user-timer";
+
+
+  chip.appendChild(
+    timer
+  );
+
+
+  /* -----------------------------------------------
+     Restore selected state
+  ------------------------------------------------ */
+
+  if (
+    selectedUsers[user]
+  ) {
+
+    chip.classList.add(
       "selected"
     );
 
+    updateUserTimer(
+      chip,
+      user
+    );
+
   }
-);
 
 
-  /* Mouse */
+  /* -----------------------------------------------
+     Click = select / deselect
+  ------------------------------------------------ */
+
+  chip.addEventListener(
+    "click",
+    e => {
+
+      /*
+       * Ignore click after dragging
+       */
+
+      if (
+        chip.dataset.wasDragged ===
+        "true"
+      ) {
+
+        chip.dataset.wasDragged =
+          "false";
+
+        return;
+
+      }
+
+
+      if (
+        selectedUsers[user]
+      ) {
+
+        /*
+         * Deselect
+         */
+
+        delete selectedUsers[user];
+
+        chip.classList.remove(
+          "selected"
+        );
+
+        timer.textContent =
+          "";
+
+        save();
+
+      } else {
+
+        /*
+         * Select
+         */
+
+        selectedUsers[user] =
+          Date.now();
+
+        chip.classList.add(
+          "selected"
+        );
+
+        updateUserTimer(
+          chip,
+          user
+        );
+
+        save();
+
+      }
+
+    }
+  );
+
+
+  /* -----------------------------------------------
+     Mouse
+  ------------------------------------------------ */
 
   chip.draggable =
     true;
@@ -753,7 +863,9 @@ chip.addEventListener(
   );
 
 
-  /* Touch */
+  /* -----------------------------------------------
+     Touch
+  ------------------------------------------------ */
 
   chip.addEventListener(
     "pointerdown",
@@ -765,6 +877,172 @@ chip.addEventListener(
 
 }
 
+
+/* ==========================================================
+   USER TIMER
+========================================================== */
+
+function updateUserTimer(
+  chip,
+  user
+) {
+
+  const selectedAt =
+    selectedUsers[user];
+
+
+  if (!selectedAt) {
+
+    chip.classList.remove(
+      "selected"
+    );
+
+    const timer =
+      chip.querySelector(
+        ".user-timer"
+      );
+
+    if (timer) {
+      timer.textContent = "";
+    }
+
+    return;
+
+  }
+
+
+  const elapsed =
+    Date.now() -
+    selectedAt;
+
+
+  const TWO_HOURS =
+    2 * 60 * 60 * 1000;
+
+
+  /*
+   * 2 hours passed
+   */
+
+  if (
+    elapsed >=
+    TWO_HOURS
+  ) {
+
+    delete selectedUsers[user];
+
+    chip.classList.remove(
+      "selected"
+    );
+
+    const timer =
+      chip.querySelector(
+        ".user-timer"
+      );
+
+    if (timer) {
+      timer.textContent = "";
+    }
+
+    save();
+
+    return;
+
+  }
+
+
+  const remaining =
+    TWO_HOURS -
+    elapsed;
+
+
+  const remainingMinutes =
+    Math.ceil(
+      remaining / 60000
+    );
+
+
+  const timer =
+    chip.querySelector(
+      ".user-timer"
+    );
+
+
+  if (!timer)
+    return;
+
+
+  if (
+    remainingMinutes > 60
+  ) {
+
+    timer.textContent =
+      "1h+";
+
+  } else if (
+    remainingMinutes > 30
+  ) {
+
+    timer.textContent =
+      "30m+";
+
+  } else if (
+    remainingMinutes > 10
+  ) {
+
+    timer.textContent =
+      "10m+";
+
+  } else {
+
+    timer.textContent =
+      "10m-";
+
+  }
+
+}
+
+/* ==========================================================
+   UPDATE ALL USER TIMERS
+========================================================== */
+
+function updateAllUserTimers() {
+
+  document
+    .querySelectorAll(
+      ".user-chip"
+    )
+    .forEach(
+      chip => {
+
+        const user =
+          chip.dataset.user;
+
+        if (
+          selectedUsers[user]
+        ) {
+
+          updateUserTimer(
+            chip,
+            user
+          );
+
+        }
+
+      }
+    );
+
+}
+
+
+/*
+ * Update every 5 minutes
+ */
+
+setInterval(
+  updateAllUserTimers,
+  5 * 60 * 1000
+);
 
 
 /* ==========================================================
@@ -2560,3 +2838,5 @@ setupDeleteDropZone();
 ========================================================== */
 
 init();
+
+updateAllUserTimers();
