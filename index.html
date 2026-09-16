@@ -9,12 +9,18 @@
     content="width=device-width, initial-scale=1.0"
   />
 
-  <title>Group Manager</title>
+  <title>츄솜핑뚀</title>
 
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
+
+
+.user-chip.selected {
+  background-color: #fef3c7;
+  border-color: #f59e0b;
+}
 
     * {
       -webkit-tap-highlight-color: transparent;
@@ -313,15 +319,6 @@
   >
 
 
-    <!-- ===================================================
-         GROUPS
-    ==================================================== -->
-
-    <div
-      id="groupsContainer"
-      class="space-y-4"
-    ></div>
-
 
 
     <!-- ===================================================
@@ -330,7 +327,7 @@
 
     <section
       class="
-        mt-6
+        mt-0
         bg-white
         rounded-xl
         border
@@ -441,6 +438,16 @@
       ></div>
 
     </section>
+
+
+    <!-- ===================================================
+         GROUPS
+    ==================================================== -->
+
+    <div
+      id="groupsContainer"
+      class="mt-4 space-y-4"
+    ></div>
 
 
   </main>
