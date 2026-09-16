@@ -50,16 +50,6 @@ const DEFAULT_GROUPS = [
     alliance: "",
 
     users: []
-  },
-
-  {
-    id: createId(),
-
-    name: "GROUP 3",
-
-    alliance: "",
-
-    users: []
   }
 
 ];
@@ -75,6 +65,7 @@ let groups = [];
 let availableUsers = [];
 
 let dragState = null;
+let touchState = null;
 
 
 
@@ -714,6 +705,35 @@ function createUserChip(
   chip.dataset.sourceGroup =
     sourceGroup;
 
+  /* Click = select / deselect */
+
+chip.addEventListener(
+  "click",
+  e => {
+
+    /*
+     * Ignore click after dragging
+     */
+    if (
+      chip.dataset.wasDragged ===
+      "true"
+    ) {
+
+      chip.dataset.wasDragged =
+        "false";
+
+      return;
+
+    }
+
+
+    chip.classList.toggle(
+      "selected"
+    );
+
+  }
+);
+
 
   /* Mouse */
 
@@ -756,6 +776,8 @@ function mouseDragStart(e) {
   const chip =
     e.currentTarget;
 
+chip.dataset.wasDragged =
+  "true";
 
   dragState = {
 
@@ -1484,137 +1506,197 @@ function clearDropHighlights() {
    TOUCH DRAG START
 ========================================================== */
 
+
+
 function touchPointerDown(e) {
 
-  if (
-    e.pointerType === "mouse"
-  ) {
-
+  if (e.pointerType === "mouse") {
     return;
-
   }
 
+  const chip = e.currentTarget;
 
-  const chip =
-    e.currentTarget;
-
-
-  const rect =
-    chip.getBoundingClientRect();
-
-
-  const preview =
-    chip.cloneNode(true);
-
-
-  preview.classList.remove(
-    "user-chip"
-  );
-
-
-  preview.classList.add(
-    "drag-preview"
-  );
-
-
-  preview.style.width =
-    `${rect.width}px`;
-
-
-  preview.style.left =
-    `${e.clientX}px`;
-
-
-  preview.style.top =
-    `${e.clientY}px`;
-
-
-  document.body.appendChild(
-    preview
-  );
-
-
-  chip.classList.add(
-    "dragging"
-  );
-
-
-  chip.setPointerCapture(
-    e.pointerId
-  );
-
-
-  dragState = {
-
-    user:
-      chip.dataset.user,
-
-    sourceGroup:
-      chip.dataset.sourceGroup,
-
+  touchState = {
     chip,
-
-    preview,
-
-    pointerId:
-      e.pointerId
-
+    pointerId: e.pointerId,
+    startX: e.clientX,
+    startY: e.clientY,
+    dragging: false,
+    preview: null
   };
 
-
-  chip.addEventListener(
+  /*
+   * Listen on document so the drag
+   * continues even after leaving the chip.
+   */
+  document.addEventListener(
     "pointermove",
     touchPointerMove
   );
 
-
-  chip.addEventListener(
+  document.addEventListener(
     "pointerup",
     touchPointerUp
   );
 
-
-  chip.addEventListener(
+  document.addEventListener(
     "pointercancel",
     touchPointerUp
   );
-
 }
 
-
-
-/* ==========================================================
-   TOUCH DRAG MOVE
-========================================================== */
 
 function touchPointerMove(e) {
 
   if (
-    !dragState ||
-    dragState.pointerId !==
-      e.pointerId
+    !touchState ||
+    e.pointerId !== touchState.pointerId
   ) {
-
     return;
+  }
+
+  const chip =
+    touchState.chip;
+
+
+  /*
+   * Check movement before starting drag.
+   */
+  if (!touchState.dragging) {
+
+    const dx =
+      e.clientX -
+      touchState.startX;
+
+    const dy =
+      e.clientY -
+      touchState.startY;
+
+    const distance =
+      Math.sqrt(
+        dx * dx +
+        dy * dy
+      );
+
+
+    /*
+     * Less than 8px = still a tap.
+     */
+    if (distance < 8) {
+      return;
+    }
+
+
+    /*
+     * Real drag starts.
+     */
+    touchState.dragging = true;
+
+    chip.dataset.wasDragged =
+      "true";
+
+
+    const rect =
+      chip.getBoundingClientRect();
+
+
+    const preview =
+      chip.cloneNode(true);
+
+
+    preview.classList.remove(
+      "user-chip"
+    );
+
+    preview.classList.add(
+      "drag-preview"
+    );
+
+
+    preview.style.position =
+      "fixed";
+
+    preview.style.left =
+      `${rect.left}px`;
+
+    preview.style.top =
+      `${rect.top}px`;
+
+    preview.style.width =
+      `${rect.width}px`;
+
+    preview.style.pointerEvents =
+      "none";
+
+    preview.style.zIndex =
+      "9999";
+
+
+    document.body.appendChild(
+      preview
+    );
+
+
+    touchState.preview =
+      preview;
+
+
+    chip.classList.add(
+      "dragging"
+    );
+
+
+    dragState = {
+
+      user:
+        chip.dataset.user,
+
+      sourceGroup:
+        chip.dataset.sourceGroup,
+
+      chip,
+      preview,
+
+      pointerId:
+        e.pointerId
+
+    };
 
   }
 
 
-  const {
-    preview
-  } = dragState;
+  /*
+   * Prevent page scrolling
+   * only after drag has started.
+   */
+  e.preventDefault();
 
 
-  preview.style.left =
-    `${e.clientX}px`;
+  const preview =
+    touchState.preview;
 
 
-  preview.style.top =
-    `${e.clientY}px`;
+  if (preview) {
+
+    preview.style.left =
+      `${e.clientX -
+        preview.offsetWidth / 2}px`;
+
+    preview.style.top =
+      `${e.clientY -
+        preview.offsetHeight / 2}px`;
+
+  }
 
 
-  preview.style.display =
-    "none";
+  /*
+   * Hide preview temporarily
+   * to detect the element underneath.
+   */
+  if (preview) {
+    preview.style.display =
+      "none";
+  }
 
 
   const target =
@@ -1624,17 +1706,25 @@ function touchPointerMove(e) {
     );
 
 
-  preview.style.display =
-    "";
+  if (preview) {
+    preview.style.display =
+      "";
+  }
 
 
   clearDropHighlights();
 
 
-  /* Group */
+  if (!target) {
+    return;
+  }
 
+
+  /*
+   * GROUP
+   */
   const groupZone =
-    target?.closest(
+    target.closest(
       ".group-drop-zone"
     );
 
@@ -1645,23 +1735,22 @@ function touchPointerMove(e) {
       "drag-over"
     );
 
-
-    updateDropIndicator(
-      groupZone,
-      e.clientX,
-      e.clientY
-    );
-
+      updateDropIndicator(
+    groupZone,
+    e.clientX,
+    e.clientY
+  );
 
     return;
 
   }
 
 
-  /* Available */
-
+  /*
+   * AVAILABLE USERS
+   */
   const availableZone =
-    target?.closest(
+    target.closest(
       "#availableUsers"
     );
 
@@ -1677,65 +1766,97 @@ function touchPointerMove(e) {
   }
 
 
-  /* Delete */
-
+  /*
+   * DELETE
+   */
   const deleteZone =
-    target?.closest(
+    target.closest(
       "#availableDeleteZone"
     );
 
 
-  if (deleteZone) {
-
-    /*
-     * Delete highlight only when
-     * dragging an Available User.
-     */
-
-    if (
-      dragState.sourceGroup ===
+  if (
+    deleteZone &&
+    dragState?.sourceGroup ===
       "available"
-    ) {
+  ) {
 
-      deleteZone.classList.add(
-        "drag-over"
-      );
-
-    }
+    deleteZone.classList.add(
+      "drag-over"
+    );
 
   }
 
 }
 
 
-
-/* ==========================================================
-   TOUCH DRAG END
-========================================================== */
-
 function touchPointerUp(e) {
 
   if (
-    !dragState ||
-    dragState.pointerId !==
-      e.pointerId
+    !touchState ||
+    e.pointerId !== touchState.pointerId
   ) {
+    return;
+  }
+
+
+  const state =
+    touchState;
+
+  const chip =
+    state.chip;
+
+
+  /*
+   * -----------------------------------------------
+   * SIMPLE TAP
+   * -----------------------------------------------
+   *
+   * Do nothing.
+   *
+   * The normal click event in
+   * createUserChip() will handle
+   * select / deselect.
+   */
+  if (!state.dragging) {
+
+    document.removeEventListener(
+      "pointermove",
+      touchPointerMove
+    );
+
+    document.removeEventListener(
+      "pointerup",
+      touchPointerUp
+    );
+
+    document.removeEventListener(
+      "pointercancel",
+      touchPointerUp
+    );
+
+    touchState =
+      null;
 
     return;
 
   }
 
 
-  const {
-    chip,
-    preview,
-    user,
-    sourceGroup
-  } = dragState;
+  /*
+   * -----------------------------------------------
+   * REAL DRAG
+   * -----------------------------------------------
+   */
+
+  const preview =
+    state.preview;
 
 
-  preview.style.display =
-    "none";
+  if (preview) {
+    preview.style.display =
+      "none";
+  }
 
 
   const target =
@@ -1745,70 +1866,82 @@ function touchPointerUp(e) {
     );
 
 
-  /* -----------------------------------------------
-     Group
-  ------------------------------------------------ */
-
-  const groupZone =
-    target?.closest(
-      ".group-drop-zone"
-    );
+  if (preview) {
+    preview.remove();
+  }
 
 
-  if (groupZone) {
+  clearDropHighlights();
 
-    const index =
-      getInsertIndex(
-        groupZone,
-        e.clientX,
-        e.clientY
+
+  if (
+    target &&
+    dragState
+  ) {
+
+    /*
+     * GROUP
+     */
+    const groupZone =
+      target.closest(
+        ".group-drop-zone"
       );
 
 
-    moveUserToGroup(
-      user,
-      groupZone.dataset.groupId,
-      index
-    );
+    if (groupZone) {
 
-  }
-
-
-  /* -----------------------------------------------
-     Available
-  ------------------------------------------------ */
-
-  else if (
-    target?.closest(
-      "#availableUsers"
-    )
-  ) {
-
-    returnUserToAvailable(
-      user
-    );
-
-  }
+      const insertIndex =
+        getInsertIndex(
+          groupZone,
+          e.clientX,
+          e.clientY
+        );
 
 
-  /* -----------------------------------------------
-     Delete
-  ------------------------------------------------ */
+      moveUserToGroup(
+        dragState.user,
+        groupZone.dataset.groupId,
+        insertIndex
+      );
 
-  else if (
-    target?.closest(
-      "#availableDeleteZone"
-    )
-  ) {
+    }
 
-    if (
-      sourceGroup ===
-      "available"
+
+    /*
+     * AVAILABLE
+     */
+    else if (
+      target.closest(
+        "#availableUsers"
+      )
     ) {
 
-      deleteAvailableUser(
-        user
+      returnUserToAvailable(
+        dragState.user
       );
+
+    }
+
+
+    /*
+     * DELETE
+     */
+    else if (
+      target.closest(
+        "#availableDeleteZone"
+      )
+    ) {
+
+      if (
+        dragState.sourceGroup ===
+        "available"
+      ) {
+
+        deleteAvailableUser(
+          dragState.user
+        );
+
+      }
 
     }
 
@@ -1820,34 +1953,17 @@ function touchPointerUp(e) {
   );
 
 
-  preview.remove();
-
-
-  clearDropHighlights();
-
-
-  try {
-
-    chip.releasePointerCapture(
-      e.pointerId
-    );
-
-  } catch {}
-
-
-  chip.removeEventListener(
+  document.removeEventListener(
     "pointermove",
     touchPointerMove
   );
 
-
-  chip.removeEventListener(
+  document.removeEventListener(
     "pointerup",
     touchPointerUp
   );
 
-
-  chip.removeEventListener(
+  document.removeEventListener(
     "pointercancel",
     touchPointerUp
   );
@@ -1856,9 +1972,10 @@ function touchPointerUp(e) {
   dragState =
     null;
 
+  touchState =
+    null;
+
 }
-
-
 
 /* ==========================================================
    ADD GROUP
@@ -2079,6 +2196,7 @@ function showNewUserInput() {
         "Enter"
       ) {
 
+        e.preventDefault();
         addNewUser(
           input.value
         );
@@ -2174,11 +2292,6 @@ function addNewUser(
     inGroup
   ) {
 
-    alert(
-      "This user already exists."
-    );
-
-    render();
 
     return;
 
@@ -2257,7 +2370,7 @@ document
     );
 
     navigator.clipboard
-      .writeText(text)
+      .writeText(text.trimEnd())
       .then(
         () => {
           showCopyFeedback();
@@ -2406,44 +2519,30 @@ document
 
 function resetAll() {
 
-  const confirmed =
-    confirm(
-      "Reset all groups and users?"
-    );
+  const allUsers = [];
 
+  // 모든 그룹의 유저를 Available Users로 이동
+  groups.forEach(group => {
 
-  if (!confirmed)
-    return;
+    allUsers.push(...group.users);
 
+    group.users = [];
 
-  groups =
-    DEFAULT_GROUPS.map(
-      group => ({
+  });
 
-        id:
-          createId(),
+  // 기존 Available Users도 유지
+  availableUsers = [
+    ...availableUsers,
+    ...allUsers
+  ];
 
-        name:
-          group.name,
+  // 중복 제거
+  availableUsers = [...new Set(availableUsers)];
 
-        alliance:
-          "",
-
-        users:
-          []
-
-      })
-    );
-
-
-  availableUsers =
-    [];
-
-
+  save();
   render();
 
 }
-
 
 
 /* ==========================================================
